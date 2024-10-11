@@ -2,32 +2,32 @@
 # https://github.com/rollkit/local-celestia-devnet
 
 
-def run(plan):
+def run(
+    plan,
+    validator_grpc_port=9090,
+    validator_rpc_port=26657,
+    bridge_rpc_port=26658,
+    bridge_rest_port=26659
+    ):
     # config
     env_vars = {}
     env_vars["CELESTIA_NAMESPACE"] = "lazy_namespace"
 
-    # celestia-app
-    validator_grpc_port = PortSpec(number=9090, transport_protocol="TCP", application_protocol="http")
-    validator_rpc_port = PortSpec(number=26657,transport_protocol="TCP", application_protocol="http")
-
-    # celestia-node
-    bridge_rpc_port = PortSpec(number=26658, transport_protocol="TCP", application_protocol="http")
-    bridge_rest_port = PortSpec(number=26659, transport_protocol="TCP", application_protocol="http")
-
-    # setup
-    ports = { 
-        "validator-grpc": validator_grpc_port,
-        "validator-rpc": validator_rpc_port,
-        "bridge-rpc": bridge_rpc_port,
-        "bridge-rest": bridge_rest_port
-    }
-
     service_config = ServiceConfig(
         image="ghcr.io/rollkit/local-celestia-devnet:v0.13.1",
         env_vars=env_vars,
-        ports=ports,
-        public_ports=ports,
+        ports={ 
+            "validator-grpc": PortSpec(number=9090, transport_protocol="TCP", application_protocol="http"),
+            "validator-rpc": PortSpec(number=26657,transport_protocol="TCP", application_protocol="http"),
+            "bridge-rpc": PortSpec(number=26658, transport_protocol="TCP", application_protocol="http"),
+            "bridge-rest": PortSpec(number=26659, transport_protocol="TCP", application_protocol="http")
+        },
+        public_ports={ 
+            "validator-grpc": PortSpec(number=validator_grpc_port, transport_protocol="TCP", application_protocol="http"),
+            "validator-rpc": PortSpec(number=validator_rpc_port,transport_protocol="TCP", application_protocol="http"),
+            "bridge-rpc": PortSpec(number=bridge_rpc_port, transport_protocol="TCP", application_protocol="http"),
+            "bridge-rest": PortSpec(number=bridge_rest_port, transport_protocol="TCP", application_protocol="http")
+        },
     )
 
     local_da = plan.add_service(name="celestia-local",config=service_config)
