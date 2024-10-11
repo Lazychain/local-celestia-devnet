@@ -1,0 +1,4 @@
+name: github.com/Lazychain/local-celestia-devnet
+description: |-
+  Spin a local celestia validator and bridge. based from rollkit repo
+replace: {}
