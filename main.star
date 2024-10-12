@@ -4,6 +4,7 @@
 
 def run(
     plan,
+    chain_id="test",
     validator_grpc_port=9090,
     validator_rpc_port=26657,
     bridge_rpc_port=26658,
@@ -12,6 +13,7 @@ def run(
     # config
     env_vars = {}
     env_vars["CELESTIA_NAMESPACE"] = "lazy_namespace"
+    service_name="celestia-local"
 
     service_config = ServiceConfig(
         image="ghcr.io/rollkit/local-celestia-devnet:v0.13.1",
@@ -30,15 +32,32 @@ def run(
         },
     )
 
-    local_da = plan.add_service(name="celestia-local",config=service_config)
-   
-    local_da_validator = "http://{0}:{1}".format(
-        local_da.ip_address, local_da.ports["validator-rpc"].number
-    )
+    local_da = plan.add_service(name=service_name,config=service_config)
 
-    local_da_bridge = "http://{0}:{1}".format(
-        local_da.ip_address, local_da.ports["bridge-rpc"].number
-    )
 
-    return (local_da_validator, local_da_bridge)
+    validator_addr = plan.exec(
+        description="Getting Validator Address",
+        service_name=service_name,
+        recipe=ExecRecipe(
+            command=[
+                "/bin/sh",
+                "-c",
+                "celestia-appd keys list --keyring-backend test --output json | jq 'map(.address) |add'",
+            ]
+        ),
+    )["output"]
+
+    validator_key = plan.exec(
+        description="Getting Validator Address",
+        service_name=service_name,
+        recipe=ExecRecipe(
+            command=[
+                "/bin/sh",
+                "-c",
+                "celestia-appd keys list --keyring-backend test --output json | jq 'map(.pubkey | fromjson | .key) |add'",
+            ]
+        ),
+    )["output"]
+
+    return { "validator_addr" : validator_addr, "validator_key" : validator_key }
     

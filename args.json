@@ -1,4 +1,5 @@
 {
+  "chain_id": "test",
   "validator_grpc_port": 9090,
   "validator_rpc_port": 20657,
   "bridge_rpc_port": 20658,
