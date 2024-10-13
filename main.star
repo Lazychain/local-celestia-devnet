@@ -45,9 +45,9 @@ def run(
                 "celestia-appd keys add dev01 --keyring-backend test --output json | jq '.address |add'",
             ]
         ),
-    )["output"].strip("\n").strip("\"")
+    )["output"]
 
-    cmd = "celestia-appd keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.validator' | sed 's/\"//g; s/\t//g;'"
+    cmd = "celestia-appd keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.validator' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
     validator_addr = plan.exec(
         description="Getting Validator Address",
         service_name=service_name,
@@ -58,9 +58,9 @@ def run(
                 cmd,
             ]
         ),
-    )["output"].strip("\n").strip("\"")
+    )["output"]
 
-    cmd = "celestia-appd keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.dev01' | sed 's/\"//g; s/\t//g;'"
+    cmd = "celestia-appd keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.dev01' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
     dev_addr = plan.exec(
         description="Getting Validator Address",
         service_name=service_name,
@@ -74,19 +74,7 @@ def run(
     )["output"]
 
     # kurtosis is so limited that we need to filter \n and to use that we need tr....
-    cmd="echo \"celestia-appd tx bank send "+ validator_addr +dev_addr+" 1000000utia --keyring-backend test --fees 500utia -y\" | tr '\n' ' '"
-
-    prepare_command = plan.exec(
-        description="Funding dev wallet {0}".format(dev_addr),
-        service_name=service_name,
-        recipe=ExecRecipe(
-            command=[
-                "/bin/sh",
-                "-c",
-                cmd,
-            ]
-        ),
-    )["output"]
+    cmd="celestia-appd tx bank send {0} {1} 1000000utia --keyring-backend test --fees 500utia -y".format(validator_addr,dev_addr)
 
     fund_wallet = plan.exec(
         description="Funding dev wallet {0}".format(dev_addr),
@@ -95,7 +83,7 @@ def run(
             command=[
                 "/bin/sh",
                 "-c",
-                "{}".format(prepare_command),
+                cmd,
             ]
         ),
     )["output"]
