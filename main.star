@@ -5,6 +5,7 @@
 def run(
     plan,
     chain_id="test",
+    dummy_mnemonic="", # this must be provided
     validator_grpc_port=9090,
     validator_rpc_port=26657,
     bridge_rpc_port=26658,
@@ -35,6 +36,7 @@ def run(
     local_da = plan.add_service(name=service_name,config=service_config)
 
     # Create development account
+    cmd="echo \"{0}\" | celestia-appd keys add dev01 --keyring-backend test --output json --recover | jq '.address |add'".format(dummy_mnemonic)
     create_dev_wallet = plan.exec(
         description="Creating Development Account",
         service_name=service_name,
@@ -42,14 +44,14 @@ def run(
             command=[
                 "/bin/sh",
                 "-c",
-                "celestia-appd keys add dev01 --keyring-backend test --output json | jq '.address |add'",
+                cmd,
             ]
         ),
     )["output"]
 
     cmd = "celestia-appd keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.validator' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
     validator_addr = plan.exec(
-        description="Getting Validator Address",
+        description="Getting Validator address",
         service_name=service_name,
         recipe=ExecRecipe(
             command=[
@@ -62,7 +64,7 @@ def run(
 
     cmd = "celestia-appd keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.dev01' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
     dev_addr = plan.exec(
-        description="Getting Validator Address",
+        description="Getting Dev01 Address",
         service_name=service_name,
         recipe=ExecRecipe(
             command=[
